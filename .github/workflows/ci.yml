@@ -28,7 +28,7 @@ jobs:
       # --no-git: avoids `git log parent^..HEAD` failing when the first commit has no parent
       # or when github.event.before is all zeros on a new branch.
       - name: Secret scan (working tree)
-        run: gitleaks detect --source . --config .gitleaks.toml --verbose --redacted --no-git
+        run: gitleaks detect --source . --config .gitleaks.toml --verbose --redact=100 --no-git
 
   lint-test:
     runs-on: ubuntu-latest
