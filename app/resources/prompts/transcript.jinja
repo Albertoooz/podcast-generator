@@ -53,11 +53,15 @@ Current segment ONLY:
 
 Rules:
 {% if words_per_segment %}
-- Target length: approximately {{ words_per_segment }} words (≈ {{ turns }} dialogue turns).
+- **Hard budget (this segment):** total spoken words **must not exceed ~{{ words_per_segment }}** across all lines combined.
+- Use **at most {{ max_dialogue_lines }}** entries in the `transcript` array (each entry = one speaker line). Prefer shorter lines; ~{{ turns }} exchanges is a good pacing target.
+- **Per line:** each `"dialogue"` string should stay **about {{ max_words_per_line }} words or fewer** (brief lines avoid truncated JSON).
+- Stay under the word budget even if the topic is rich; you can hint “we’ll pick this up next time” if needed.
 {% else %}
 - At least {{ turns }} dialogue turns.
 {% endif %}
-- Only speakers: {{ speaker_names|join(', ') }}
+- **Speaker field (critical):** every line’s `speaker` value must be **exactly** one of these strings (copy spelling and spacing): {{ speaker_names|join(' | ') }}.
+- Do **not** use job titles (Producer, Host, Moderator, Narrator, Guest, etc.) as `speaker` — only the names above.
 - Natural, conversational; balanced turns; no meta-commentary.
 - This segment only; others are generated separately.
 {% if is_final %}
