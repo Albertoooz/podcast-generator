@@ -1,0 +1,11 @@
+# https://github.com/gitleaks/gitleaks — secret scanning
+title = "podcast-generator"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Env template contains only placeholder variable names"
+paths = [
+  '''\.env\.example$''',
+]

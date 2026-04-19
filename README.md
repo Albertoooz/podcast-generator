@@ -70,7 +70,7 @@ uv run ruff format app tests
 uv run ruff check app tests
 ```
 
-**Pre-commit:** after `uv sync --all-groups`, run `uv run pre-commit install` to wire Git hooks (see [CONTRIBUTING.md](CONTRIBUTING.md)). **CI:** pushes and PRs to `main` / `master` run [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (Ruff + pytest on Ubuntu).
+**Pre-commit:** after `uv sync --all-groups`, run `uv run pre-commit install` to wire Git hooks — Ruff, **Gitleaks** (hardcoded secrets), and small file checks (see [CONTRIBUTING.md](CONTRIBUTING.md)). **CI:** pushes and PRs to `main` / `master` run [`.github/workflows/ci.yml`](.github/workflows/ci.yml): **Gitleaks**, then Ruff + pytest on Ubuntu.
 
 **ffmpeg** is a system tool for audio processing; pydub uses it when concatenating MP3 clips. See [docs/ffmpeg.md](docs/ffmpeg.md).
 

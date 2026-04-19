@@ -21,7 +21,7 @@ Put API keys and local service URLs (LLM, TTS, Langfuse) in `.env` as needed. Se
 
 ## Pre-commit (optional)
 
-Install hooks once so Ruff and basic checks run on `git commit`:
+Install hooks once so Ruff, **Gitleaks** (secret scan), and basic checks run on `git commit`:
 
 ```bash
 uv run pre-commit install
@@ -33,7 +33,7 @@ Run on all files manually:
 uv run pre-commit run --all-files
 ```
 
-Config: [`.pre-commit-config.yaml`](.pre-commit-config.yaml). CI on GitHub runs the same Ruff + pytest steps without requiring pre-commit.
+Config: [`.pre-commit-config.yaml`](.pre-commit-config.yaml) and [`gitleaks.toml`](gitleaks.toml). CI on GitHub runs **Gitleaks** plus Ruff + pytest (you can still run pre-commit locally before pushing).
 
 ## Making changes
 
