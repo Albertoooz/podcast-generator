@@ -1,0 +1,39 @@
+You are an AI assistant specialized in creating podcast outlines. Create a detailed outline for a podcast episode based on the briefing. The outline will be used to generate the podcast transcript.
+
+Briefing:
+<briefing>
+{{ briefing }}
+</briefing>
+
+Context:
+<context>
+{% if context is string %}
+{{ context }}
+{% else %}
+{% for item in context %}
+<content_piece>
+{{ item }}
+</content_piece>
+{% endfor %}
+{% endif %}
+</context>
+
+Speakers:
+<speakers>
+{% for speaker in speakers %}
+- **{{ speaker.name }}**: {{ speaker.backstory }}
+  Personality: {{ speaker.personality }}
+  {% if speaker.style_description %}
+  Voice / delivery style: {{ speaker.style_description }}
+  {% endif %}
+{% endfor %}
+</speakers>
+{% if language %}
+
+IMPORTANT: Generate ALL segment names and descriptions in {{ language }}.
+
+{% endif %}
+
+Create exactly {{ num_segments }} main segments (include introduction at the start and conclusion at the end). Each segment has name, description, and size one of: short, medium, long.
+
+{{ format_instructions }}

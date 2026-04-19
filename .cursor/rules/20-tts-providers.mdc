@@ -1,0 +1,6 @@
+---
+description: TTS provider conventions
+globs: app/tts/**/*.py
+---
+
+Implement the `TTSProvider` protocol: `name: str` and `async def synthesize(text, speaker, output_file) -> Path`. Read `speaker.voice_id`, `speaker.voice_sample_path`, `speaker.style_description`, `speaker.tts_config`. Register every provider in `app/tts/registry.py`. Add provider rows to `docs/tts-providers.md`.

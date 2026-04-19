@@ -1,0 +1,40 @@
+# Local Voxtral TTS via vLLM-Omni (official stack for mistralai/Voxtral-4B-TTS-2603).
+# Requires NVIDIA GPU (~16GB+ VRAM) on Linux/x86_64 — NOT available on Apple Silicon Macs.
+# HF_TOKEN in .env. See docs/voxtral-local-setup.md (section "Apple Silicon Macs").
+#
+# Start: docker compose --profile gpu up voxtral
+# Podcast app: set VOXTRAL_LOCAL_URL=http://127.0.0.1:8000
+services:
+  voxtral:
+    image: vllm/vllm-omni:v0.18.0
+    # Image is amd64-only; on Apple Silicon this forces pull via emulation (slow; still no NVIDIA on Mac).
+    platform: linux/amd64
+    profiles:
+      - gpu
+    ports:
+      - "8000:8000"
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+      HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN:-}
+    volumes:
+      - voxtral-cache:/root/.cache/huggingface
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command:
+      - vllm
+      - serve
+      - mistralai/Voxtral-4B-TTS-2603
+      - --omni
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8000"
+
+volumes:
+  voxtral-cache: {}

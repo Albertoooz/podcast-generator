@@ -1,0 +1,6 @@
+---
+description: Podcast generator project defaults
+alwaysApply: true
+---
+
+Read [AGENTS.md](AGENTS.md) and [docs/architecture.md](docs/architecture.md) before large changes. Python 3.11, `uv`, LangGraph + LangChain + Langfuse; configs live under `configs/` and prompts under `prompts/`.

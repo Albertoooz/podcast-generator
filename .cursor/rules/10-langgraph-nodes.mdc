@@ -1,0 +1,6 @@
+---
+description: LangGraph node patterns
+globs: app/graph/**/*.py
+---
+
+Nodes are `async def node(state: PodcastState, config: RunnableConfig) -> dict` returning **partial** state updates only. Use `get_chat_model` + `with_structured_output`. Apply `create_retry_decorator(**get_retry_config(configurable))` for LLM calls. Do not block the event loop — use `asyncio.to_thread` for sync audio libs.

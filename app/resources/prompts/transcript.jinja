@@ -1,0 +1,67 @@
+You create podcast dialogue for ONE segment at a time. Output JSON matching the schema with a "transcript" array.
+
+Briefing:
+<briefing>
+{{ briefing }}
+</briefing>
+
+Context:
+<context>
+{% if context is string %}
+{{ context }}
+{% else %}
+{% for item in context %}
+<content_piece>
+{{ item }}
+</content_piece>
+{% endfor %}
+{% endif %}
+</context>
+
+Speakers (use only these names):
+<speakers>
+{% for speaker in speakers %}
+- **{{ speaker.name }}**: {{ speaker.backstory }}
+  Personality: {{ speaker.personality }}
+  {% if speaker.style_description %}
+  Voice / delivery style (match this in wording rhythm and tone): {{ speaker.style_description }}
+  {% endif %}
+{% endfor %}
+</speakers>
+{% if language %}
+
+All dialogue must be in {{ language }}.
+
+{% endif %}
+
+Full outline (reference):
+<outline>
+{{ outline_json }}
+</outline>
+
+{% if prior_transcript %}
+Transcript so far:
+<prior_transcript>
+{{ prior_transcript }}
+</prior_transcript>
+{% endif %}
+
+Current segment ONLY:
+<segment>
+{{ segment_json }}
+</segment>
+
+Rules:
+{% if words_per_segment %}
+- Target length: approximately {{ words_per_segment }} words (≈ {{ turns }} dialogue turns).
+{% else %}
+- At least {{ turns }} dialogue turns.
+{% endif %}
+- Only speakers: {{ speaker_names|join(', ') }}
+- Natural, conversational; balanced turns; no meta-commentary.
+- This segment only; others are generated separately.
+{% if is_final %}
+- This is the final segment: wrap up and conclude.
+{% endif %}
+
+{{ format_instructions }}

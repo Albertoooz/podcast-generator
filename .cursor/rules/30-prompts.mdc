@@ -1,0 +1,6 @@
+---
+description: Jinja prompt templates
+globs: prompts/**/*.jinja,app/resources/prompts/**/*.jinja
+---
+
+Templates use XML-like sections: `<briefing>`, `<context>`, `<speakers>`. Each speaker may include `style_description` for dialogue tone. Keep compatibility with `app/prompting.py` render keys. After edits, mention running `podcast-generator init` for user projects copying bundled templates.

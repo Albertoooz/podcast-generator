@@ -1,0 +1,6 @@
+---
+description: Streamlit UI pages
+globs: app/ui/**/*.py
+---
+
+Multi-page app: main `streamlit_app.py`, pages under `app/ui/pages/`. Avoid duplicate `st.set_page_config` in every page (keep in main entry). Long-running work: `asyncio.run(create_podcast(...))` inside button handlers. Do not store secrets in session state.
