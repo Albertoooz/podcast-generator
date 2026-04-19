@@ -3,7 +3,7 @@
 help:
 	@echo "sync   - uv sync"
 	@echo "test   - pytest"
-	@echo "lint   - ruff check"
+	@echo "lint   - ruff + mypy"
 	@echo "format - ruff format"
 	@echo "ui     - streamlit run app/ui/streamlit_app.py"
 	@echo "voxtral-model-download - prefetch Voxtral TTS from HF (needs HF_TOKEN in .env)"
@@ -21,7 +21,7 @@ test:
 
 lint:
 	uv run ruff check app tests
-	uv run mypy app || true
+	uv run mypy app
 
 format:
 	uv run ruff format app tests

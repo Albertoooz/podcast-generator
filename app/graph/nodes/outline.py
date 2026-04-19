@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
@@ -26,10 +26,10 @@ async def generate_outline_node(state: PodcastState, config: RunnableConfig) -> 
     async def _invoke(prompt: str) -> Outline:
         msg = HumanMessage(content=prompt)
         result = await llm.ainvoke([msg], config=config)
-        return result
+        return cast(Outline, result)
 
-    assert state.get("speaker_profile") is not None
     sp = state["speaker_profile"]
+    assert sp is not None
     prompt = render_outline_prompt(
         {
             "briefing": state["briefing"],

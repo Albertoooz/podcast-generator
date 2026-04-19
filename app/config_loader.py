@@ -11,7 +11,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from loguru import logger
 
@@ -114,11 +114,11 @@ def load_episode_config_file_dict() -> dict[str, Any]:
     path = _default_episodes_path()
     if path.exists():
         with path.open(encoding="utf-8") as f:
-            return json.load(f)
+            return cast(dict[str, Any], json.load(f))
     bundled = _bundled_episodes_path()
     if bundled.exists():
         with bundled.open(encoding="utf-8") as f:
-            return json.load(f)
+            return cast(dict[str, Any], json.load(f))
     return default_episodes_dict()
 
 
@@ -130,11 +130,11 @@ def _load_episode_config_dict() -> dict[str, Any]:
     path = _default_episodes_path()
     if path.exists():
         with path.open(encoding="utf-8") as f:
-            return json.load(f)
+            return cast(dict[str, Any], json.load(f))
     bundled = _bundled_episodes_path()
     if bundled.exists():
         with bundled.open(encoding="utf-8") as f:
-            return json.load(f)
+            return cast(dict[str, Any], json.load(f))
     return default_episodes_dict()
 
 

@@ -68,9 +68,18 @@ Register voices in **`configs/voices.json`** with `podcast-generator clone-voice
 uv run pytest -v
 uv run ruff format app tests
 uv run ruff check app tests
+uv run mypy app
 ```
 
-**Pre-commit:** after `uv sync --all-groups`, run `uv run pre-commit install` to wire Git hooks — Ruff, **Gitleaks** (hardcoded secrets), and small file checks (see [CONTRIBUTING.md](CONTRIBUTING.md)). **CI:** pushes and PRs to `main` / `master` run [`.github/workflows/ci.yml`](.github/workflows/ci.yml): **Gitleaks**, then Ruff + pytest on Ubuntu.
+Or **`make lint`** (Ruff + Mypy) / **`make test`**.
+
+**Pre-commit:** after `uv sync --all-groups`, run `uv run pre-commit install` — Ruff, **Gitleaks**, and basic file checks ([CONTRIBUTING.md](CONTRIBUTING.md)).
+
+**CI / security (GitHub Actions, `main` / `master`):**
+
+- [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — **Gitleaks**, **Ruff** (lint + format check), **Mypy** on `app/`, **Pytest**.
+- [`.github/workflows/codeql.yml`](.github/workflows/codeql.yml) — **CodeQL** static analysis for Python (plus weekly schedule).
+- [`.github/dependabot.yml`](.github/dependabot.yml) — weekly PRs for **GitHub Actions** and **pip** (`pyproject.toml`).
 
 **ffmpeg** is a system tool for audio processing; pydub uses it when concatenating MP3 clips. See [docs/ffmpeg.md](docs/ffmpeg.md).
 

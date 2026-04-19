@@ -10,6 +10,7 @@ Python 3.11 app: **LangGraph** pipeline (`outline → transcript → TTS clips �
 uv sync --all-groups
 uv run pytest -v
 uv run ruff check app tests && uv run ruff format app tests
+uv run mypy app
 uv run podcast-generator --help
 uv run podcast-generator init
 uv run pre-commit install   # optional Git hooks (Ruff + file checks)

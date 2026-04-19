@@ -18,19 +18,31 @@ def get_chat_model(provider: str, model: str, **config: Any) -> BaseChatModel:
         from langchain_openai import ChatOpenAI
 
         kwargs = {k: v for k, v in config.items() if v is not None}
-        return ChatOpenAI(model=model, api_key=settings.openai_api_key, **kwargs)
+        return ChatOpenAI(
+            model=model,
+            api_key=settings.openai_api_key,  # type: ignore[arg-type]
+            **kwargs,
+        )
 
     if p == "anthropic":
         from langchain_anthropic import ChatAnthropic
 
         kwargs = {k: v for k, v in config.items() if v is not None}
-        return ChatAnthropic(model=model, api_key=settings.anthropic_api_key, **kwargs)
+        return ChatAnthropic(
+            model=model,  # type: ignore[call-arg]
+            api_key=settings.anthropic_api_key,  # type: ignore[arg-type]
+            **kwargs,
+        )
 
     if p in ("mistral", "mistralai"):
         from langchain_mistralai import ChatMistralAI
 
         kwargs = {k: v for k, v in config.items() if v is not None}
-        return ChatMistralAI(model=model, api_key=settings.mistral_api_key, **kwargs)
+        return ChatMistralAI(
+            model=model,  # type: ignore[call-arg]
+            api_key=settings.mistral_api_key,  # type: ignore[arg-type]
+            **kwargs,
+        )
 
     if p == "ollama":
         from langchain_ollama import ChatOllama
@@ -55,7 +67,7 @@ def get_chat_model(provider: str, model: str, **config: Any) -> BaseChatModel:
             kwargs["default_headers"] = headers
         return ChatOpenAI(
             model=model,
-            api_key=settings.openrouter_api_key,
+            api_key=settings.openrouter_api_key,  # type: ignore[arg-type]
             base_url=base_url,
             **kwargs,
         )

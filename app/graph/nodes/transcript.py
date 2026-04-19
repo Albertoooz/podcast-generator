@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, cast
 
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
@@ -47,7 +47,7 @@ async def generate_transcript_node(state: PodcastState, config: RunnableConfig) 
     @llm_retry
     async def _invoke(prompt: str) -> Transcript:
         msg = HumanMessage(content=prompt)
-        return await llm.ainvoke([msg], config=config)
+        return cast(Transcript, await llm.ainvoke([msg], config=config))
 
     transcript: list[Dialogue] = []
     outline_json = json.dumps(outline.model_dump(), indent=2)

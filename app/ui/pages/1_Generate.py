@@ -6,7 +6,7 @@ import asyncio
 import importlib.util
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 _b = Path(__file__).resolve().parent.parent / "_bootstrap.py"
 _s = importlib.util.spec_from_file_location("podcast_streamlit_bootstrap", _b)
@@ -120,7 +120,7 @@ def _parse_cfg(key: str) -> dict[str, Any]:
     raw = (st.session_state.get(key) or "").strip()
     if not raw:
         return {}
-    return json.loads(raw)
+    return cast(dict[str, Any], json.loads(raw))
 
 
 if st.button("Run pipeline", type="primary"):

@@ -49,10 +49,11 @@ Run from the repo root:
 ```bash
 uv run ruff format app tests
 uv run ruff check app tests
+uv run mypy app
 uv run pytest -v
 ```
 
-Fix any failures before opening a PR. Optional: `uv run mypy app` if you touch typing-heavy code (project may use relaxed mypy settings).
+Or `make lint` and `make test`. Fix any failures before opening a PR — **Mypy** is required in CI on `app/` (`ignore_missing_imports` is enabled for third-party stubs).
 
 ## Pull requests
 
