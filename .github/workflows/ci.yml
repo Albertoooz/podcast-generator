@@ -10,6 +10,9 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  GITLEAKS_VERSION: "8.30.1"
+
 jobs:
   gitleaks:
     runs-on: ubuntu-latest
@@ -18,9 +21,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Gitleaks
+        run: |
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | sudo tar -xz -C /usr/local/bin gitleaks
+
+      # --no-git: avoids `git log parent^..HEAD` failing when the first commit has no parent
+      # or when github.event.before is all zeros on a new branch.
+      - name: Secret scan (working tree)
+        run: gitleaks detect --source . --config .gitleaks.toml --verbose --redacted --no-git
 
   lint-test:
     runs-on: ubuntu-latest

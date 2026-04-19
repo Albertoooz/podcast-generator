@@ -33,7 +33,7 @@ Run on all files manually:
 uv run pre-commit run --all-files
 ```
 
-Config: [`.pre-commit-config.yaml`](.pre-commit-config.yaml) and [`gitleaks.toml`](gitleaks.toml). CI on GitHub runs **Gitleaks** plus Ruff + pytest (you can still run pre-commit locally before pushing).
+Config: [`.pre-commit-config.yaml`](.pre-commit-config.yaml) and [`.gitleaks.toml`](.gitleaks.toml). CI on GitHub runs **Gitleaks** (`--no-git` full tree) plus Ruff + pytest.
 
 ## Making changes
 
