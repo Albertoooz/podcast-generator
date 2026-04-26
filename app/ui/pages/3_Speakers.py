@@ -18,6 +18,10 @@ import streamlit as st  # noqa: E402
 from app.config_loader import load_speakers_library, save_speakers_library  # noqa: E402
 from app.models.speaker import SpeakerEntry, SpeakersLibrary  # noqa: E402
 from app.services.speaker_resolver import DEFAULT_TTS_MODEL  # noqa: E402
+from app.tts.providers.elevenlabs import (  # noqa: E402
+    format_elevenlabs_user_error,
+    list_voices_on_elevenlabs,
+)
 from app.tts.providers.voxtral_cloud import list_voices_on_mistral  # noqa: E402
 from app.tts.registry import list_tts_provider_ids  # noqa: E402
 from app.tts.voice_library import list_voices  # noqa: E402
@@ -129,15 +133,63 @@ if st.session_state.sp_view == "edit" and st.session_state.sp_edit_id:
                     "If set, overrides the dropdown. Paste a UUID from Mistral Studio when needed."
                 ),
             )
+        elif tts_p == "elevenlabs":
+            st.markdown("**ElevenLabs — voice id**")
+            el_list_key = f"se_el_voices_{sid}"
+            r1, r2 = st.columns([1, 2])
+            with r1:
+                if st.button("Fetch from ElevenLabs", key=f"se_el_fetch_{sid}"):
+                    try:
+                        st.session_state[el_list_key] = asyncio.run(list_voices_on_elevenlabs())
+                    except Exception as exc:
+                        st.session_state[el_list_key] = []
+                        st.session_state[f"se_el_err_{sid}"] = format_elevenlabs_user_error(exc)
+            with r2:
+                err_el = st.session_state.pop(f"se_el_err_{sid}", None)
+                if err_el:
+                    st.error(err_el)
+            remote_el: list[dict] = st.session_state.get(el_list_key) or []
+            if remote_el:
+                ids_el = [str(v["id"]) for v in remote_el]
+                name_el: dict[str, str] = {}
+                for v in remote_el:
+                    vid_el = str(v["id"])
+                    nm_el = (v.get("name") or "").strip() or vid_el[:8]
+                    name_el[vid_el] = nm_el
+
+                def _fmt_el_voice(voice_id: str) -> str:
+                    cat = ""
+                    for x in remote_el:
+                        if str(x["id"]) == voice_id:
+                            cat = x.get("category") or ""
+                            break
+                    suf = f" ({cat})" if cat else ""
+                    return f"{name_el.get(voice_id, voice_id)}{suf} — {voice_id}"
+
+                cur_el = (entry.tts_voice_preset or "").strip()
+                ix_el = ids_el.index(cur_el) if cur_el in ids_el else 0
+                st.selectbox(
+                    "Pick a voice from your ElevenLabs account",
+                    ids_el,
+                    index=ix_el,
+                    format_func=_fmt_el_voice,
+                    key=f"se_el_voice_{sid}",
+                    help="Premade or cloned voice from your ElevenLabs account.",
+                )
+            else:
+                st.caption("Click **Fetch from ElevenLabs** to list voices, or paste an id below.")
+            st.text_input(
+                "ElevenLabs voice id (optional, overrides pick above)",
+                value=entry.tts_voice_preset or "",
+                key=f"se_tts_vp_{sid}",
+                help="If set, overrides the dropdown (e.g. id copied from elevenlabs.io).",
+            )
         else:
             st.text_input(
                 "TTS voice / preset (optional)",
                 value=entry.tts_voice_preset or "",
                 key=f"se_tts_vp_{sid}",
-                help=(
-                    "Provider-specific voice id (e.g. OpenAI `alloy`). "
-                    "ElevenLabs needs your dashboard voice id here without a library voice."
-                ),
+                help="Provider-specific voice id (e.g. OpenAI `alloy`).",
             )
     else:
         st.caption("TTS provider, model, and sample come from the selected Voice library entry.")
@@ -159,11 +211,18 @@ if st.session_state.sp_view == "edit" and st.session_state.sp_edit_id:
             tvp_raw = (st.session_state.get(f"se_tts_vp_{sid}") or "").strip()
             tts_p_save = (st.session_state.get(f"se_tts_p_{sid}") or "openai").lower().strip()
             mistral_list_key = f"se_mistral_voices_{sid}"
+            el_list_key = f"se_el_voices_{sid}"
             if tts_p_save == "voxtral_cloud" and tvp_raw:
                 tts_voice_final = tvp_raw
             elif tts_p_save == "voxtral_cloud" and st.session_state.get(mistral_list_key):
                 tts_voice_final = (
                     str(st.session_state.get(f"se_mistral_voice_{sid}") or "").strip() or None
+                )
+            elif tts_p_save == "elevenlabs" and tvp_raw:
+                tts_voice_final = tvp_raw
+            elif tts_p_save == "elevenlabs" and st.session_state.get(el_list_key):
+                tts_voice_final = (
+                    str(st.session_state.get(f"se_el_voice_{sid}") or "").strip() or None
                 )
             else:
                 tts_voice_final = tvp_raw or None

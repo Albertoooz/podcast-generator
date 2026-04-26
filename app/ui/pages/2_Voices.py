@@ -16,6 +16,13 @@ import asyncio  # noqa: E402
 
 import streamlit as st  # noqa: E402
 
+from app.tts.providers.elevenlabs import (  # noqa: E402
+    delete_voice_on_elevenlabs,
+    elevenlabs_voice_id_looks_assigned,
+    format_elevenlabs_user_error,
+    list_voices_on_elevenlabs,
+    register_voice_with_elevenlabs,
+)
 from app.tts.providers.voxtral_cloud import (  # noqa: E402
     _is_mistral_voice_uuid,
     delete_voice_on_mistral,
@@ -50,11 +57,11 @@ READING_SCRIPTS: dict[str, str] = {
 
 st.header("Voice library")
 st.caption(
-    "Stores metadata locally. For **Mistral / Voxtral cloud**: upload a sample here, then click "
-    "**Register with Mistral** — the returned UUID is saved as *Provider voice id* and used "
-    "automatically during generation (no `ref_audio` upload on every call). "
-    "For zero-shot cloning without registering, just leave the UUID empty. "
-    "ElevenLabs needs a voice id from their dashboard."
+    "Stores metadata locally. For **Mistral / Voxtral cloud**: upload a sample, then "
+    "**Register with Mistral** — the UUID is saved as *Provider voice id*. "
+    "For **ElevenLabs**: use **Fetch from ElevenLabs** to see account voices, or upload a sample "
+    "and **Register with ElevenLabs** (instant clone) to get a `voice_id`. "
+    "You can also paste an existing ElevenLabs voice id from their dashboard."
 )
 
 voices_dir().mkdir(parents=True, exist_ok=True)
@@ -64,8 +71,8 @@ label_in = st.text_input("Label", placeholder="My narrator voice")
 prov = st.selectbox("Target TTS provider", list_tts_provider_ids())
 
 preset_in = st.text_input(
-    "Provider voice id / preset (required for OpenAI & ElevenLabs; optional Mistral preset)",
-    placeholder="e.g. alloy, casual_male (Voxtral), or ElevenLabs id",
+    "Provider voice id / preset (OpenAI required; ElevenLabs: leave empty if you upload a sample)",
+    placeholder="Leave empty for ElevenLabs + sample, then use IVC on the tile below",
 )
 
 st.markdown("**Voice sample** — record yourself or upload a file (browser must allow microphone).")
@@ -101,7 +108,8 @@ key_in = st.text_input("Library key (optional)", placeholder="my_voice")
 
 def _write_sample_from_mic_or_file() -> Path | None:
     """Prefer microphone recording over file upload."""
-    mic = st.session_state.get("vl_mic_sample")
+    # Prefer the widget return value; session_state can lag on some Streamlit versions.
+    mic = recorded if recorded is not None else st.session_state.get("vl_mic_sample")
     if mic is not None:
         raw = mic.getvalue()
         if raw:
@@ -126,8 +134,11 @@ def _validate_and_save() -> None:
     p = prov.lower().strip()
     pid = preset_in.strip() if preset_in else ""
     path = _write_sample_from_mic_or_file()
-    if p in ("elevenlabs", "openai") and not pid:
-        st.error("Provider voice id / preset is required for OpenAI and ElevenLabs")
+    if p == "openai" and not pid:
+        st.error("Provider voice id / preset is required for OpenAI")
+        return
+    if p == "elevenlabs" and not pid and path is None:
+        st.error("ElevenLabs: provide a voice id and/or a voice sample (clone after save via tile)")
         return
     if p in ("xtts", "voxtral_mlx", "voxtral_local") and path is None:
         st.error("Upload a sample for this provider")
@@ -179,6 +190,29 @@ with st.expander("☁️ Browse voices registered on Mistral", expanded=False):
     else:
         st.caption("Click **Fetch from Mistral** to see your remote voices.")
 
+with st.expander("☁️ Browse voices on ElevenLabs", expanded=False):
+    if st.button("Fetch from ElevenLabs", key="vl_fetch_eleven"):
+        try:
+            el_remote = asyncio.run(list_voices_on_elevenlabs())
+            st.session_state["vl_eleven_remote"] = el_remote
+        except Exception as exc:
+            st.error(f"Could not fetch: {format_elevenlabs_user_error(exc)}")
+
+    el_voices: list[dict] = st.session_state.get("vl_eleven_remote", [])
+    if el_voices:
+        st.caption(f"{len(el_voices)} voice(s) on ElevenLabs:")
+        for rv in el_voices:
+            cat = rv.get("category") or "—"
+            st.markdown(
+                f"- **{rv.get('name', '?')}** (`{cat}`) &mdash; `{rv['id']}`",
+                unsafe_allow_html=True,
+            )
+    else:
+        st.caption(
+            "Click **Fetch from ElevenLabs** to list premade and cloned voices. "
+            "Restricted API keys need Voices: Read (see ElevenLabs → API keys)."
+        )
+
 # --- Per-voice tiles -----------------------------------------------------------
 vids = list_voices()
 if not vids:
@@ -190,8 +224,15 @@ else:
         provider = meta.get("provider", "")
         current_pvid = meta.get("provider_voice_id") or ""
         is_mistral = provider == "voxtral_cloud"
+        is_eleven = provider == "elevenlabs"
         has_sample = sample and Path(sample).exists()
         is_registered = is_mistral and _is_mistral_voice_uuid(current_pvid)
+        el_has_id = is_eleven and elevenlabs_voice_id_looks_assigned(current_pvid)
+        el_placeholder_pvid = (
+            is_eleven
+            and bool((current_pvid or "").strip())
+            and not elevenlabs_voice_id_looks_assigned(current_pvid)
+        )
 
         with st.container(border=True):
             c1, c2 = st.columns([1, 2])
@@ -245,6 +286,61 @@ else:
                         else:
                             st.warning("Upload a sample to register with Mistral.")
 
+                if is_eleven:
+                    if el_placeholder_pvid:
+                        st.warning(
+                            "Provider voice id looks like a placeholder (e.g. the word "
+                            "'elevenlabs'), not a real ElevenLabs voice id. Use "
+                            "**Register with ElevenLabs (IVC)** below, or clear the field and Save."
+                        )
+                    if el_has_id:
+                        st.success("☁️ ElevenLabs voice id")
+                        st.code(current_pvid, language=None)
+                        if st.button(
+                            "🗑 Delete from ElevenLabs",
+                            key=f"vl_el_del_{vid}",
+                            type="secondary",
+                            help=(
+                                "Only for voices you created (cloned). "
+                                "Premade voices cannot be removed."
+                            ),
+                        ):
+                            try:
+                                asyncio.run(delete_voice_on_elevenlabs(current_pvid.strip()))
+                                update_voice(vid, provider_voice_id=None)
+                                st.success("Deleted from ElevenLabs; id cleared.")
+                                st.rerun()
+                            except Exception as exc:
+                                st.error(f"Delete failed: {format_elevenlabs_user_error(exc)}")
+                    else:
+                        if has_sample:
+                            if st.button(
+                                "☁️ Register with ElevenLabs (IVC)",
+                                key=f"vl_el_reg_{vid}",
+                                type="primary",
+                            ):
+                                try:
+                                    el_id = asyncio.run(
+                                        register_voice_with_elevenlabs(
+                                            meta.get("label") or vid,
+                                            sample,
+                                            description=(meta.get("style_description") or "")[:500]
+                                            or None,
+                                        )
+                                    )
+                                    update_voice(vid, provider_voice_id=el_id)
+                                    st.success(f"Cloned on ElevenLabs: `{el_id}`")
+                                    st.rerun()
+                                except Exception as exc:
+                                    st.error(
+                                        f"Registration failed: {format_elevenlabs_user_error(exc)}"
+                                    )
+                        else:
+                            st.warning(
+                                "Upload a WAV/MP3 sample to clone on ElevenLabs, "
+                                "or paste a voice id."
+                            )
+
             with c2:
                 nl = st.text_input("Label", value=meta.get("label", ""), key=f"vl_lab_{vid}")
                 np = st.text_input(
@@ -252,9 +348,9 @@ else:
                     value=current_pvid,
                     key=f"vl_pvid_{vid}",
                     help=(
-                        "For Mistral: use **Register with Mistral** button to auto-fill a UUID. "
-                        "For ElevenLabs: paste the voice id from their dashboard. "
-                        "For OpenAI: use a preset name like `alloy`."
+                        "Mistral: **Register with Mistral** fills a UUID. "
+                        "ElevenLabs: paste a dashboard id, or **Register with ElevenLabs** "
+                        "after saving with a sample. OpenAI: e.g. `alloy`."
                     ),
                 )
                 ns = st.text_area(

@@ -1,11 +1,22 @@
 from functools import lru_cache
+from pathlib import Path
 
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Pydantic's env_file=".env" is cwd-relative; Streamlit may start with a different cwd.
+# Resolve repo root (parent of ``app/``) so keys from the project ``.env`` always load.
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_ENV_FILE = _REPO_ROOT / ".env"
+if _ENV_FILE.is_file():
+    # ``override=True``: if the shell/IDE exported an empty ``ELEVENLABS_API_KEY=``, a
+    # non-empty value from ``.env`` must still win (``override=False`` would keep "").
+    load_dotenv(_ENV_FILE, override=True)
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ENV_FILE) if _ENV_FILE.is_file() else ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -44,3 +55,10 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def refresh_settings_env() -> None:
+    """Reload project ``.env`` and invalidate cached ``Settings`` (Streamlit / shell quirks)."""
+    if _ENV_FILE.is_file():
+        load_dotenv(_ENV_FILE, override=True)
+    get_settings.cache_clear()
