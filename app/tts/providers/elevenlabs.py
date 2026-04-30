@@ -135,7 +135,7 @@ async def register_voice_with_elevenlabs(
     if description and description.strip():
         kwargs["description"] = description.strip()
     result = await client.voices.ivc.create(**kwargs)
-    vid = result.voice_id
+    vid = str(result.voice_id)
     logger.info("Registered ElevenLabs IVC voice '{}' → {}", name, vid)
     return vid
 
